@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Device Detector</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; }
+        h1 { color: #333; }
+        #model-name { font-size: 24px; color: #007bff; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Your Device is:</h1>
+        <p id="model-name">Detecting...</p>
+        <p id="details"></p>
+    </div>
+
+    <script>
+        async function detectDevice() {
+            const modelDisplay = document.getElementById('model-name');
+            
+            // 1. Try the modern "Client Hints" method (Most accurate for Android)
+            if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+                try {
+                    const hints = await navigator.userAgentData.getHighEntropyValues(['model', 'platformVersion']);
+                    if (hints.model) {
+                        modelDisplay.innerText = hints.model;
+                        return;
+                    }
+                } catch (e) {
+                    console.log("Client Hints failed, trying fallback...");
+                }
+            }
+
+            // 2. Fallback: Check the old User-Agent string
+            const ua = navigator.userAgent;
+            modelDisplay.innerText = "Unknown Device";
+            
+            if (/iPhone|iPad|iPod/.test(ua)) {
+                modelDisplay.innerText = "Apple iOS Device";
+            } else if (/Android/.test(ua)) {
+                modelDisplay.innerText = "Android Device (Model Hidden)";
+            }
+        }
+
+        detectDevice();
+    </script>
+</body>
+</html>
