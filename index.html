@@ -3,51 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Device Detector</title>
+    <title>Device & Location Tracker</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f9; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; }
-        h1 { color: #333; }
-        #model-name { font-size: 24px; color: #007bff; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: white; text-align: center; padding: 20px; }
+        .container { max-width: 500px; margin: auto; background: #16213e; padding: 30px; border-radius: 20px; border: 1px solid #0f3460; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .data-box { background: #0f3460; margin: 15px 0; padding: 15px; border-radius: 10px; text-align: left; }
+        .label { color: #4ecca3; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 18px; margin-top: 5px; word-break: break-all; }
+        button { background: #e94560; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button:hover { background: #ff4d6d; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>Your Device is:</h1>
-        <p id="model-name">Detecting...</p>
-        <p id="details"></p>
+    <div class="container">
+        <h2>System Scan</h2>
+        
+        <div class="data-box">
+            <div class="label">Device Model</div>
+            <div id="model" class="value">Detecting...</div>
+        </div>
+
+        <div class="data-box">
+            <div class="label">Public IP & ISP</div>
+            <div id="ip-info" class="value">Fetching...</div>
+        </div>
+
+        <div class="data-box">
+            <div class="label">Approx. Location (IP based)</div>
+            <div id="city-info" class="value">Loading...</div>
+        </div>
+
+        <div class="data-box">
+            <div class="label">GPS Coordinates</div>
+            <div id="gps-info" class="value">Waiting for permission...</div>
+            <button onclick="getExactLocation()">Request GPS Access</button>
+        </div>
     </div>
 
     <script>
-        async function detectDevice() {
-            const modelDisplay = document.getElementById('model-name');
-            
-            // 1. Try the modern "Client Hints" method (Most accurate for Android)
+        // 1. Get Device Model (High Entropy Client Hints)
+        async function getModel() {
             if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
-                try {
-                    const hints = await navigator.userAgentData.getHighEntropyValues(['model', 'platformVersion']);
-                    if (hints.model) {
-                        modelDisplay.innerText = hints.model;
-                        return;
-                    }
-                } catch (e) {
-                    console.log("Client Hints failed, trying fallback...");
-                }
-            }
-
-            // 2. Fallback: Check the old User-Agent string
-            const ua = navigator.userAgent;
-            modelDisplay.innerText = "Unknown Device";
-            
-            if (/iPhone|iPad|iPod/.test(ua)) {
-                modelDisplay.innerText = "Apple iOS Device";
-            } else if (/Android/.test(ua)) {
-                modelDisplay.innerText = "Android Device (Model Hidden)";
+                const hints = await navigator.userAgentData.getHighEntropyValues(['model']);
+                document.getElementById('model').innerText = hints.model || "Generic Android Device";
+            } else {
+                document.getElementById('model').innerText = "Manual detection required (iOS/Old Browser)";
             }
         }
 
-        detectDevice();
+        // 2. Get IP and City (via External API)
+        async function getNetworkInfo() {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                const data = await response.json();
+                document.getElementById('ip-info').innerText = `${data.ip} (${data.org})`;
+                document.getElementById('city-info').innerText = `${data.city}, ${data.region}, ${data.country_name}`;
+            } catch (error) {
+                document.getElementById('ip-info').innerText = "Blocked by Ad-Blocker";
+            }
+        }
+
+        // 3. Get Exact GPS (Requires User Permission)
+        function getExactLocation() {
+            const gpsDiv = document.getElementById('gps-info');
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    gpsDiv.innerText = `Lat: ${pos.coords.latitude.toFixed(4)}, Long: ${pos.coords.longitude.toFixed(4)}`;
+                }, (err) => {
+                    gpsDiv.innerText = "Permission Denied";
+                });
+            } else {
+                gpsDiv.innerText = "Geolocation not supported";
+            }
+        }
+
+        // Initialize
+        getModel();
+        getNetworkInfo();
     </script>
 </body>
 </html>
